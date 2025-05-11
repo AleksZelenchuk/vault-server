@@ -1,34 +1,75 @@
 package main
 
 import (
+	_ "context"
 	"fmt"
+	"github.com/AleksZelenchuk/vault-server/gen/go/vaultpb"
 	"github.com/AleksZelenchuk/vault-server/pkg/config"
-	"github.com/AleksZelenchuk/vault-server/pkg/interceptors"
+	"github.com/AleksZelenchuk/vault-server/pkg/service"
 	"github.com/AleksZelenchuk/vault-server/pkg/storage"
-	"github.com/jmoiron/sqlx"
-	"google.golang.org/grpc"
 	"log"
+	"net"
+	"os"
+
+	_ "github.com/AleksZelenchuk/vault-server/gen/go/vaultpb"
+	_ "github.com/AleksZelenchuk/vault-server/pkg/auth"
+	"github.com/jmoiron/sqlx"
+	"google.golang.org/grpc/reflection"
+
+	_ "github.com/lib/pq"
+	"google.golang.org/grpc"
 )
 
 func main() {
-	cfg := config.LoadConfig()
-	err := storage.InitCrypto()
-
-	db, err := sqlx.Connect("postgres", cfg.DatabaseURL)
-	if err != nil {
-		log.Fatal(err)
+	// === Load Config ===
+	_ = config.LoadConfig()
+	dbURL := os.Getenv("DATABASE_URL")
+	grpcPort := os.Getenv("GRPC_PORT")
+	if grpcPort == "" {
+		grpcPort = "8080"
 	}
-	_ = storage.NewStore(db)
+	masterKey := os.Getenv("VAULT_MASTER_KEY")
+	if masterKey == "" {
+		log.Fatal("VAULT_MASTER_KEY is required")
+	}
+	//storage.SetMasterKey([]byte(masterKey)) // securely set encryption key
 
-	//srv := service.NewVaultService(store, publisher)
+	// === Connect to Database ===
+	db, err := sqlx.Connect("postgres", dbURL)
+	if err != nil {
+		log.Fatalf("DB connection failed: %v", err)
+	}
+	defer func(db *sqlx.DB) {
+		err := db.Close()
+		if err != nil {
+			_ = fmt.Errorf("error closing DB")
+		}
+	}(db)
 
-	/*	if err != nil {
-		log.Fatal(err)
-	}*/
+	// === Initialize Dependencies ===
+	store := storage.NewStore(db)
 
-	fmt.Printf("New server is starting")
-	grpc.NewServer(
-		grpc.ChainUnaryInterceptor(interceptors.UnaryAuthInterceptor),
-		grpc.ChainStreamInterceptor(interceptors.StreamAuthInterceptor),
+	// === Initialize Vault Service ===
+	vaultService := service.NewVaultService(store)
+
+	// === Set up gRPC Server with Auth Middleware ===
+	server := grpc.NewServer(
+	//grpc.ChainUnaryInterceptor(interceptors.UnaryAuthInterceptor),
+	//grpc.ChainStreamInterceptor(interceptors.StreamAuthInterceptor),
 	)
+	reflection.Register(server)
+
+	vaultpb.RegisterVaultServiceServer(server, vaultService)
+
+	// === Start Listener ===
+	lis, err := net.Listen("tcp", ":"+grpcPort)
+	if err != nil {
+		log.Fatalf("Failed to listen on port %s: %v", grpcPort, err)
+	}
+	log.Printf("Vault gRPC server listening on port %s", grpcPort)
+
+	// === Serve ===
+	if err := server.Serve(lis); err != nil {
+		log.Fatalf("Failed to serve gRPC: %v", err)
+	}
 }

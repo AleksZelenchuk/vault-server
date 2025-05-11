@@ -39,6 +39,14 @@ func (s *Store) Get(ctx context.Context, id uuid.UUID) (*Entry, error) {
 	return &e, nil
 }
 
+func (s *Store) Delete(ctx context.Context, id uuid.UUID) (bool, error) {
+	_, err := s.db.ExecContext(ctx, `DELETE FROM vault_entries WHERE id=$1`, id)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // Similar Update and Delete implementations...
 
 func (s *Store) List(ctx context.Context, folder string, tags []string) ([]Entry, error) {
@@ -54,5 +62,8 @@ func (s *Store) List(ctx context.Context, folder string, tags []string) ([]Entry
 	}
 	var entries []Entry
 	err := s.db.SelectContext(ctx, &entries, query, args...)
+	for _, entry := range entries {
+		entry.Password, _ = Decrypt(entry.Password)
+	}
 	return entries, err
 }

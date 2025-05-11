@@ -1,4 +1,56 @@
 syntax = "proto3";
-package proto;
+
+package vault;
 
 option go_package = "github.com/AleksZelenchuk/vault-server/gen/go/vaultpb";
+
+// Example message and service
+message VaultEntry {
+  string id = 1;
+  string title = 2;
+  string username = 3;
+  string password = 4;
+  string notes = 5;
+  repeated string tags = 6;
+  string folder = 7;
+}
+
+message CreateEntryRequest {
+  VaultEntry entry = 1;
+}
+
+message CreateEntryResponse {
+  string id = 1;
+}
+
+message GetEntryRequest {
+  string id = 1;
+}
+
+message GetEntryResponse {
+  VaultEntry entry = 1;
+}
+
+message ListEntriesRequest {
+  string folder = 1;
+  repeated string tags = 2;
+}
+
+message ListEntriesResponse {
+  repeated VaultEntry entries = 1;
+}
+
+message DeleteEntryRequest {
+  string id = 1;
+}
+
+message DeleteEntryResponse {
+  bool success = 1;
+}
+
+service VaultService {
+  rpc CreateEntry(CreateEntryRequest) returns (CreateEntryResponse);
+  rpc GetEntry(GetEntryRequest) returns (GetEntryResponse);
+  rpc ListEntries(ListEntriesRequest) returns (ListEntriesResponse);
+  rpc DeleteEntry(DeleteEntryRequest) returns (DeleteEntryResponse);
+}

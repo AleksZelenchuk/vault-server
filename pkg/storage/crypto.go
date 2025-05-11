@@ -26,6 +26,12 @@ func InitCrypto() error {
 }
 
 func Encrypt(plain []byte) ([]byte, error) {
+	if masterKey == nil {
+		err := InitCrypto()
+		if err != nil {
+			return nil, err
+		}
+	}
 	block, err := aes.NewCipher(masterKey)
 	if err != nil {
 		return nil, err
@@ -42,6 +48,12 @@ func Encrypt(plain []byte) ([]byte, error) {
 }
 
 func Decrypt(ciphertext []byte) ([]byte, error) {
+	if masterKey == nil {
+		err := InitCrypto()
+		if err != nil {
+			return nil, err
+		}
+	}
 	block, err := aes.NewCipher(masterKey)
 	if err != nil {
 		return nil, err
