@@ -25,12 +25,13 @@ const (
 type VaultEntry struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	Username      string                 `protobuf:"bytes,3,opt,name=username,proto3" json:"username,omitempty"`
-	Password      string                 `protobuf:"bytes,4,opt,name=password,proto3" json:"password,omitempty"`
-	Notes         string                 `protobuf:"bytes,5,opt,name=notes,proto3" json:"notes,omitempty"`
-	Tags          []string               `protobuf:"bytes,6,rep,name=tags,proto3" json:"tags,omitempty"`
-	Folder        string                 `protobuf:"bytes,7,opt,name=folder,proto3" json:"folder,omitempty"`
+	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	Username      string                 `protobuf:"bytes,4,opt,name=username,proto3" json:"username,omitempty"`
+	Password      string                 `protobuf:"bytes,5,opt,name=password,proto3" json:"password,omitempty"`
+	Notes         string                 `protobuf:"bytes,6,opt,name=notes,proto3" json:"notes,omitempty"`
+	Tags          []string               `protobuf:"bytes,7,rep,name=tags,proto3" json:"tags,omitempty"`
+	Folder        string                 `protobuf:"bytes,8,opt,name=folder,proto3" json:"folder,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -68,6 +69,13 @@ func (*VaultEntry) Descriptor() ([]byte, []int) {
 func (x *VaultEntry) GetId() string {
 	if x != nil {
 		return x.Id
+	}
+	return ""
+}
+
+func (x *VaultEntry) GetUserId() string {
+	if x != nil {
+		return x.UserId
 	}
 	return ""
 }
@@ -478,16 +486,17 @@ var File_vault_proto protoreflect.FileDescriptor
 
 const file_vault_proto_rawDesc = "" +
 	"\n" +
-	"\vvault.proto\x12\x05vault\"\xac\x01\n" +
+	"\vvault.proto\x12\x05vault\"\xc5\x01\n" +
 	"\n" +
 	"VaultEntry\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1a\n" +
-	"\busername\x18\x03 \x01(\tR\busername\x12\x1a\n" +
-	"\bpassword\x18\x04 \x01(\tR\bpassword\x12\x14\n" +
-	"\x05notes\x18\x05 \x01(\tR\x05notes\x12\x12\n" +
-	"\x04tags\x18\x06 \x03(\tR\x04tags\x12\x16\n" +
-	"\x06folder\x18\a \x01(\tR\x06folder\"=\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x14\n" +
+	"\x05title\x18\x03 \x01(\tR\x05title\x12\x1a\n" +
+	"\busername\x18\x04 \x01(\tR\busername\x12\x1a\n" +
+	"\bpassword\x18\x05 \x01(\tR\bpassword\x12\x14\n" +
+	"\x05notes\x18\x06 \x01(\tR\x05notes\x12\x12\n" +
+	"\x04tags\x18\a \x03(\tR\x04tags\x12\x16\n" +
+	"\x06folder\x18\b \x01(\tR\x06folder\"=\n" +
 	"\x12CreateEntryRequest\x12'\n" +
 	"\x05entry\x18\x01 \x01(\v2\x11.vault.VaultEntryR\x05entry\"%\n" +
 	"\x13CreateEntryResponse\x12\x0e\n" +

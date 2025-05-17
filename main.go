@@ -4,9 +4,12 @@ import (
 	_ "context"
 	"fmt"
 	"github.com/AleksZelenchuk/vault-server/gen/go/vaultpb"
+	"github.com/AleksZelenchuk/vault-server/gen/go/vaultuserpb"
 	"github.com/AleksZelenchuk/vault-server/pkg/config"
+	"github.com/AleksZelenchuk/vault-server/pkg/interceptors"
 	"github.com/AleksZelenchuk/vault-server/pkg/service"
 	"github.com/AleksZelenchuk/vault-server/pkg/storage"
+	"google.golang.org/grpc/reflection"
 	"log"
 	"net"
 	"os"
@@ -14,8 +17,6 @@ import (
 	_ "github.com/AleksZelenchuk/vault-server/gen/go/vaultpb"
 	_ "github.com/AleksZelenchuk/vault-server/pkg/auth"
 	"github.com/jmoiron/sqlx"
-	"google.golang.org/grpc/reflection"
-
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
 )
@@ -32,7 +33,6 @@ func main() {
 	if masterKey == "" {
 		log.Fatal("VAULT_MASTER_KEY is required")
 	}
-	//storage.SetMasterKey([]byte(masterKey)) // securely set encryption key
 
 	// === Connect to Database ===
 	db, err := sqlx.Connect("postgres", dbURL)
@@ -48,17 +48,19 @@ func main() {
 
 	// === Initialize Dependencies ===
 	store := storage.NewStore(db)
+	userStorage := storage.NewUserStore(db)
 
 	// === Initialize Vault Service ===
 	vaultService := service.NewVaultService(store)
+	userService := service.NewUserVaultService(userStorage)
 
 	// === Set up gRPC Server with Auth Middleware ===
 	server := grpc.NewServer(
-	//grpc.ChainUnaryInterceptor(interceptors.UnaryAuthInterceptor),
-	//grpc.ChainStreamInterceptor(interceptors.StreamAuthInterceptor),
+		grpc.ChainUnaryInterceptor(interceptors.UnaryAuthInterceptor),
+		grpc.ChainStreamInterceptor(interceptors.StreamAuthInterceptor),
 	)
 	reflection.Register(server)
-
+	vaultuserpb.RegisterVaultUserServiceServer(server, userService)
 	vaultpb.RegisterVaultServiceServer(server, vaultService)
 
 	// === Start Listener ===

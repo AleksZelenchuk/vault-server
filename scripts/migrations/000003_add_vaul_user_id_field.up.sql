@@ -1,0 +1,4 @@
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+ALTER TABLE vault_entries
+    ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES vault_users (id) ON DELETE CASCADE;

@@ -7,12 +7,13 @@ import (
 type contextKey string
 
 const userKey = contextKey("user_id")
+const userIdKey = contextKey("id")
 
 func WithUserID(ctx context.Context, userID string) context.Context {
-	return context.WithValue(ctx, userKey, userID)
+	return context.WithValue(ctx, userIdKey, userID)
 }
 
 func UserIDFromContext(ctx context.Context) (string, bool) {
-	uid, ok := ctx.Value(userKey).(string)
+	uid, ok := ctx.Value(userIdKey).(string)
 	return uid, ok
 }

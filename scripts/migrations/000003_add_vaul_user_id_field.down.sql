@@ -1,0 +1,4 @@
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+ALTER TABLE vault_entries
+    DROP COLUMN IF EXISTS user_id;

@@ -3,6 +3,8 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"github.com/AleksZelenchuk/vault-server/pkg/auth"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
@@ -14,20 +16,33 @@ func NewStore(db *sqlx.DB) *Store {
 	return &Store{db: db}
 }
 
+var NoUserId = errors.New("no user id provided")
+var PermissionDenied = errors.New("you dont have permission to do this")
+
 func (s *Store) Create(ctx context.Context, e *Entry) (sql.Result, error) {
+	userId, _ := auth.UserIDFromContext(ctx)
+	if userId == "" {
+		return nil, NoUserId
+	}
+
 	enc, err := Encrypt(e.Password)
 	if err != nil {
 		return nil, err
 	}
 	e.Password = enc
-	query := "INSERT INTO vault_entries (id, title, username, password, notes, tags, folder) VALUES (:id, :title, :username, :password, :notes, :tags, :folder)"
+	query := "INSERT INTO vault_entries (id, title, username, password, notes, tags, folder, user_id) VALUES (:id, :title, :username, :password, :notes, :tags, :folder, :user_id)"
 
 	return s.db.NamedExecContext(ctx, query, e)
 }
 
 func (s *Store) Get(ctx context.Context, id uuid.UUID) (*Entry, error) {
+	userId, _ := auth.UserIDFromContext(ctx)
+	if userId == "" {
+		return nil, NoUserId
+	}
+
 	var e Entry
-	err := s.db.GetContext(ctx, &e, `SELECT * FROM vault_entries WHERE id=$1`, id)
+	err := s.db.GetContext(ctx, &e, `SELECT * FROM vault_entries WHERE id=$1 AND user_id=$2`, id, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -40,18 +55,39 @@ func (s *Store) Get(ctx context.Context, id uuid.UUID) (*Entry, error) {
 }
 
 func (s *Store) Delete(ctx context.Context, id uuid.UUID) (bool, error) {
-	_, err := s.db.ExecContext(ctx, `DELETE FROM vault_entries WHERE id=$1`, id)
+	permErr := s.validateUserPermission(ctx, id)
+	if permErr != nil {
+		return false, permErr
+	}
+
+	res, err := s.db.ExecContext(ctx, `DELETE FROM vault_entries WHERE id=$1`, id)
 	if err != nil {
 		return false, err
 	}
+	ra, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+
+	if ra == int64(0) {
+		return false, sql.ErrNoRows
+	}
+
 	return true, nil
 }
 
-// Similar Update and Delete implementations...
-
 func (s *Store) List(ctx context.Context, folder string, tags []string) ([]Entry, error) {
 	query := `SELECT * FROM vault_entries WHERE 1=1`
-	args := []interface{}{}
+
+	userId, _ := auth.UserIDFromContext(ctx)
+	if userId == "" {
+		return nil, NoUserId
+	}
+	var args []interface{}
+
+	query += ` AND user_id=$1`
+	args = append(args, userId)
+
 	if folder != "" {
 		query += ` AND folder=$1`
 		args = append(args, folder)
@@ -66,4 +102,27 @@ func (s *Store) List(ctx context.Context, folder string, tags []string) ([]Entry
 		entry.Password, _ = Decrypt(entry.Password)
 	}
 	return entries, err
+}
+
+func (s *Store) validateUserPermission(ctx context.Context, id uuid.UUID) error {
+	userId, _ := auth.UserIDFromContext(ctx)
+	if userId == "" {
+		return NoUserId
+	}
+	row := s.db.QueryRowContext(ctx, `SELECT user_id FROM vault_entries WHERE id=$1`, id)
+
+	if row == nil {
+		return errors.New("no row found")
+	}
+
+	var dbUserId sql.NullString
+	if err := row.Scan(&dbUserId); err != nil {
+		return err
+	}
+
+	if !dbUserId.Valid || dbUserId.String != userId {
+		return PermissionDenied
+	}
+
+	return nil
 }

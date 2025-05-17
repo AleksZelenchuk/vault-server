@@ -3,6 +3,7 @@ package auth
 import (
 	"errors"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"time"
 )
 
@@ -12,9 +13,9 @@ func Init(secret string) {
 	jwtSecret = secret
 }
 
-func GenerateToken(userID string) (string, error) {
+func GenerateToken(UserID uuid.UUID) (string, error) {
 	claims := jwt.MapClaims{
-		"user_id": userID,
+		"user_id": UserID,
 		"exp":     time.Now().Add(24 * time.Hour).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

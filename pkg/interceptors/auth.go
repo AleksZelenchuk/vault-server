@@ -2,7 +2,6 @@ package interceptors
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/AleksZelenchuk/vault-server/pkg/auth"
@@ -21,7 +20,6 @@ func (w *wrappedServerStream) Context() context.Context {
 	return w.ctx
 }
 
-// Extract and validate token
 func authenticate(ctx context.Context) (context.Context, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -41,7 +39,7 @@ func authenticate(ctx context.Context) (context.Context, error) {
 
 	uid, ok := claims["user_id"].(string)
 	if !ok {
-		return nil, status.Error(codes.Unauthenticated, "user ID missing in token")
+		return nil, status.Error(codes.Unauthenticated, "username missing in token")
 	}
 
 	ctx = auth.WithUserID(ctx, uid)
@@ -54,7 +52,9 @@ func UnaryAuthInterceptor(
 	info *grpc.UnaryServerInfo,
 	handler grpc.UnaryHandler,
 ) (interface{}, error) {
-	fmt.Println(ctx)
+	if info.FullMethod == "/vault.VaultUserService/Login" || info.FullMethod == "/vault.VaultUserService/Register" {
+		return handler(ctx, req)
+	}
 	ctx, err := authenticate(ctx)
 	if err != nil {
 		return nil, err
