@@ -1,188 +1,159 @@
-[![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/golang-migrate/migrate/CI/master)](https://github.com/golang-migrate/migrate/actions/workflows/ci.yaml?query=branch%3Amaster)
-[![GoDoc](https://pkg.go.dev/badge/github.com/golang-migrate/migrate)](https://pkg.go.dev/github.com/golang-migrate/migrate/v4)
-[![Coverage Status](https://img.shields.io/coveralls/github/golang-migrate/migrate/master.svg)](https://coveralls.io/github/golang-migrate/migrate?branch=master)
-[![packagecloud.io](https://img.shields.io/badge/deb-packagecloud.io-844fec.svg)](https://packagecloud.io/golang-migrate/migrate?filter=debs)
-[![Docker Pulls](https://img.shields.io/docker/pulls/migrate/migrate.svg)](https://hub.docker.com/r/migrate/migrate/)
-![Supported Go Versions](https://img.shields.io/badge/Go-1.16%2C%201.17-lightgrey.svg)
-[![GitHub Release](https://img.shields.io/github/release/golang-migrate/migrate.svg)](https://github.com/golang-migrate/migrate/releases)
-[![Go Report Card](https://goreportcard.com/badge/github.com/golang-migrate/migrate)](https://goreportcard.com/report/github.com/golang-migrate/migrate)
+# Project Documentation
 
-# migrate
+## Overview
 
-__Database migrations written in Go. Use as [CLI](#cli-usage) or import as [library](#use-in-your-go-project).__
-
-* Migrate reads migrations from [sources](#migration-sources)
-   and applies them in correct order to a [database](#databases).
-* Drivers are "dumb", migrate glues everything together and makes sure the logic is bulletproof.
-   (Keeps the drivers lightweight, too.)
-* Database drivers don't assume things or try to correct user input. When in doubt, fail.
-
-Forked from [mattes/migrate](https://github.com/mattes/migrate)
-
-## Databases
-
-Database drivers run migrations. [Add a new database?](database/driver.go)
-
-* [PostgreSQL](database/postgres)
-* [PGX](database/pgx)
-* [Redshift](database/redshift)
-* [Ql](database/ql)
-* [Cassandra](database/cassandra)
-* [SQLite](database/sqlite)
-* [SQLite3](database/sqlite3) ([todo #165](https://github.com/mattes/migrate/issues/165))
-* [SQLCipher](database/sqlcipher)
-* [MySQL/ MariaDB](database/mysql)
-* [Neo4j](database/neo4j)
-* [MongoDB](database/mongodb)
-* [CrateDB](database/crate) ([todo #170](https://github.com/mattes/migrate/issues/170))
-* [Shell](database/shell) ([todo #171](https://github.com/mattes/migrate/issues/171))
-* [Google Cloud Spanner](database/spanner)
-* [CockroachDB](database/cockroachdb)
-* [ClickHouse](database/clickhouse)
-* [Firebird](database/firebird)
-* [MS SQL Server](database/sqlserver)
-
-### Database URLs
-
-Database connection strings are specified via URLs. The URL format is driver dependent but generally has the form: `dbdriver://username:password@host:port/dbname?param1=true&param2=false`
-
-Any [reserved URL characters](https://en.wikipedia.org/wiki/Percent-encoding#Percent-encoding_reserved_characters) need to be escaped. Note, the `%` character also [needs to be escaped](https://en.wikipedia.org/wiki/Percent-encoding#Percent-encoding_the_percent_character)
-
-Explicitly, the following characters need to be escaped:
-`!`, `#`, `$`, `%`, `&`, `'`, `(`, `)`, `*`, `+`, `,`, `/`, `:`, `;`, `=`, `?`, `@`, `[`, `]`
-
-It's easiest to always run the URL parts of your DB connection URL (e.g. username, password, etc) through an URL encoder. See the example Python snippets below:
-
-```bash
-$ python3 -c 'import urllib.parse; print(urllib.parse.quote(input("String to encode: "), ""))'
-String to encode: FAKEpassword!#$%&'()*+,/:;=?@[]
-FAKEpassword%21%23%24%25%26%27%28%29%2A%2B%2C%2F%3A%3B%3D%3F%40%5B%5D
-$ python2 -c 'import urllib; print urllib.quote(raw_input("String to encode: "), "")'
-String to encode: FAKEpassword!#$%&'()*+,/:;=?@[]
-FAKEpassword%21%23%24%25%26%27%28%29%2A%2B%2C%2F%3A%3B%3D%3F%40%5B%5D
-$
-```
-
-## Migration Sources
-
-Source drivers read migrations from local or remote sources. [Add a new source?](source/driver.go)
-
-* [Filesystem](source/file) - read from filesystem
-* [io/fs](source/iofs) - read from a Go [io/fs](https://pkg.go.dev/io/fs#FS)
-* [Go-Bindata](source/go_bindata) - read from embedded binary data ([jteeuwen/go-bindata](https://github.com/jteeuwen/go-bindata))
-* [pkger](source/pkger) - read from embedded binary data ([markbates/pkger](https://github.com/markbates/pkger))
-* [GitHub](source/github) - read from remote GitHub repositories
-* [GitHub Enterprise](source/github_ee) - read from remote GitHub Enterprise repositories
-* [Bitbucket](source/bitbucket) - read from remote Bitbucket repositories
-* [Gitlab](source/gitlab) - read from remote Gitlab repositories
-* [AWS S3](source/aws_s3) - read from Amazon Web Services S3
-* [Google Cloud Storage](source/google_cloud_storage) - read from Google Cloud Platform Storage
-
-## CLI usage
-
-* Simple wrapper around this library.
-* Handles ctrl+c (SIGINT) gracefully.
-* No config search paths, no config files, no magic ENV var injections.
-
-__[CLI Documentation](cmd/migrate)__
-
-### Basic usage
-
-```bash
-$ migrate -source file://path/to/migrations -database postgres://localhost:5432/database up 2
-```
-
-### Docker usage
-
-```bash
-$ docker run -v {{ migration dir }}:/migrations --network host migrate/migrate
-    -path=/migrations/ -database postgres://localhost:5432/database up 2
-```
-
-## Use in your Go project
-
-* API is stable and frozen for this release (v3 & v4).
-* Uses [Go modules](https://golang.org/cmd/go/#hdr-Modules__module_versions__and_more) to manage dependencies.
-* To help prevent database corruptions, it supports graceful stops via `GracefulStop chan bool`.
-* Bring your own logger.
-* Uses `io.Reader` streams internally for low memory overhead.
-* Thread-safe and no goroutine leaks.
-
-__[Go Documentation](https://godoc.org/github.com/golang-migrate/migrate)__
-
-```go
-import (
-    "github.com/golang-migrate/migrate/v4"
-    _ "github.com/golang-migrate/migrate/v4/database/postgres"
-    _ "github.com/golang-migrate/migrate/v4/source/github"
-)
-
-func main() {
-    m, err := migrate.New(
-        "github://mattes:personal-access-token@mattes/migrate_test",
-        "postgres://localhost:5432/database?sslmode=enable")
-    m.Steps(2)
-}
-```
-
-Want to use an existing database client?
-
-```go
-import (
-    "database/sql"
-    _ "github.com/lib/pq"
-    "github.com/golang-migrate/migrate/v4"
-    "github.com/golang-migrate/migrate/v4/database/postgres"
-    _ "github.com/golang-migrate/migrate/v4/source/file"
-)
-
-func main() {
-    db, err := sql.Open("postgres", "postgres://localhost:5432/database?sslmode=enable")
-    driver, err := postgres.WithInstance(db, &postgres.Config{})
-    m, err := migrate.NewWithDatabaseInstance(
-        "file:///migrations",
-        "postgres", driver)
-    m.Up() // or m.Step(2) if you want to explicitly set the number of migrations to run
-}
-```
-
-## Getting started
-
-Go to [getting started](GETTING_STARTED.md)
-
-## Tutorials
-
-* [CockroachDB](database/cockroachdb/TUTORIAL.md)
-* [PostgreSQL](database/postgres/TUTORIAL.md)
-
-(more tutorials to come)
-
-## Migration files
-
-Each migration has an up and down migration. [Why?](FAQ.md#why-two-separate-files-up-and-down-for-a-migration)
-
-```bash
-1481574547_create_users_table.up.sql
-1481574547_create_users_table.down.sql
-```
-
-[Best practices: How to write migrations.](MIGRATIONS.md)
-
-## Versions
-
-Version | Supported? | Import | Notes
---------|------------|--------|------
-**master** | :white_check_mark: | `import "github.com/golang-migrate/migrate/v4"` | New features and bug fixes arrive here first |
-**v4** | :white_check_mark: | `import "github.com/golang-migrate/migrate/v4"` | Used for stable releases |
-**v3** | :x: | `import "github.com/golang-migrate/migrate"` (with package manager) or `import "gopkg.in/golang-migrate/migrate.v3"` (not recommended) | **DO NOT USE** - No longer supported |
-
-## Development and Contributing
-
-Yes, please! [`Makefile`](Makefile) is your friend,
-read the [development guide](CONTRIBUTING.md).
-
-Also have a look at the [FAQ](FAQ.md).
+This project implements a secure **Vault Server** to manage user accounts and securely store sensitive information such as passwords and notes. It provides functionality for user authentication, account management, and CRUD operations for storing and retrieving encrypted entries in the vault. The project uses **gRPC** for communication, follows clean architecture principles, and ensures security best practices like password hashing and validation.
 
 ---
 
-Looking for alternatives? [https://awesome-go.com/#database](https://awesome-go.com/#database).
+## Architecture
+
+The project is organized into the following key components:
+
+1. **Services** (`service` package):
+   - Handles business logic for both user management and vault data operations.
+   - Implements gRPC service interfaces that interact with storage.
+
+2. **Storage** (`storage` package):
+   - Manages database-level operations using SQL and `sqlx`.
+   - Encryption and decryption happen here when interacting with sensitive data.
+
+3. **Auth** (`auth` package):
+   - Provides utilities for token generation and extracting user IDs from context.
+   - Includes secure user session management (e.g., JWT-based authentication).
+
+4. **Generated Protobuf** (`gen` directory):
+   - Defines gRPC APIs for user services (`vaultuserpb`) and vault data services (`vaultpb`).
+
+---
+
+## Features
+
+### 1. **User Management**
+The application allows users to:
+- **Register**: Create an account with secure password hashing using bcrypt.
+- **Login**: Authenticate users with their credentials and issue JWT tokens.
+- **Retrieve User Data**: Fetch user information via username.
+- **Delete User**: Completely remove a user account.
+
+### 2. **Vault Data Management**
+Users can:
+- **Create Entries**: Add vault entries such as passwords, usernames, and notes securely.
+- **Retrieve Entries**: View specific vault entries, with decrypted sensitive data.
+- **Delete Entries**: Remove entries from the vault based on the user ID and record ID.
+- **List Entries**: Retrieve a list of vault entries by folder and filtering with specific tags.
+
+### 3. **Security**
+Key security features include:
+- **Password Hashing**: Bcrypt is used to hash passwords securely before storing them in the database.
+- **JWT Authentication**: Generates secure tokens for authenticated users.
+- **Encryption/Decryption**: Vault entries' sensitive information like passwords are encrypted before storing in the database.
+- **User Permission Validation**: Checks user access permissions for each operation.
+
+---
+
+## Core Functionalities
+
+### User Service (`UserVaultService`)
+Implements `VaultUserServiceServer` for managing users:
+- **Register**: Validates user input, encrypts the password, and saves the user to the database.
+- **Login**: Verifies user credentials using bcrypt and issues a JWT token.
+- **Get User by Username**: Retrieves user info for a valid account.
+- **Delete User**: Deletes a user account along with their data.
+
+### Vault Service (`VaultService`)
+Implements `VaultServiceServer` for managing vault entries:
+- **Create Entry**: Encrypts sensitive data and stores it in the database.
+- **Get Entry**: Decrypts and retrieves an individual vault entry by ID.
+- **Delete Entry**: Deletes the entry if the user has permission.
+- **List Entries**: Provides flexible filtering by folder or tags for listing entries.
+
+---
+
+## Database Schema
+
+### Tables:
+1. **users**
+   - Contains user data such as username, email, and a bcrypt-hashed password.
+
+2. **vault_entries**
+   - Stores sensitive vault data associated with users.
+   - Columns include `id`, `title`, `username`, `password` (encrypted), `notes`, `tags`, `folder`, and `user_id`.
+
+---
+
+## Authentication and Authorization
+
+### JWT Authentication
+- On successful login, a JWT token is issued with the user's ID as the claim.
+- For all secured endpoints, the server validates the token and derives the user ID from the request context.
+
+### Role-Based Authorization
+- Users can only operate on entries they own, enforced using the `validateUserPermission` function.
+
+---
+
+## Installation and Setup
+
+### Prerequisites
+- **Go (>= 1.20)**
+- **PostgreSQL**
+- **Protobuf compiler (`protoc`)**
+
+### Steps to Set Up
+1. Clone the Repository:
+   ```bash
+   git clone <repository-url>
+   cd <repository-directory>
+   ```
+2. Create a PostgreSQL database and apply the schema for `users` and `vault_entries`.
+3. Install dependencies:
+   ```bash
+   go mod tidy
+   ```
+4. Run the application:
+   ```bash
+   go run main.go
+   ```
+
+---
+
+## API Endpoints (gRPC Interface)
+
+### User Service (`VaultUserService`)
+#### Methods:
+1. **Register(CreateUserRequest)**: Registers a new user.
+2. **Login(LoginRequest)**: Authenticates a user and returns an access token.
+3. **GetUserByUsername(GetUserRequest)**: Fetches user details by username.
+4. **DeleteUser(DeleteUserRequest)**: Removes a user and associated data.
+
+### Vault Service (`VaultService`)
+#### Methods:
+1. **CreateEntry(CreateEntryRequest)**: Adds a new entry to the user's vault.
+2. **GetEntry(GetEntryRequest)**: Retrieves a specific vault entry.
+3. **DeleteEntry(DeleteEntryRequest)**: Deletes an entry that the user owns.
+4. **ListEntries(ListEntriesRequest)**: Lists all the user's entries with filtering.
+
+---
+
+## Error Handling
+
+### Common Errors:
+1. **Unauthenticated**: For endpoints that require valid user authentication.
+2. **Permission Denied**: When an action is attempted on a resource owned by another user.
+3. **Invalid Input**: For invalid or missing fields in user requests.
+4. **Database Errors**: For errors at the database layer (e.g., connection failure, SQL issues).
+
+---
+
+
+---
+
+## Future Enhancements
+
+1. **Additional Encryption Algorithms**: Support for customizable encryption for entries.
+2. **Audit Logs**: Track user activity for security purposes.
+3. **Tag-based Search**: Improve querying by supporting tag-based search with pagination.
+4. **Two-Factor Authentication (2FA)**: Add another layer of user security.
+
+---
