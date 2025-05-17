@@ -25,6 +25,8 @@ The project is organized into the following key components:
 4. **Generated Protobuf** (`gen` directory):
    - Defines gRPC APIs for user services (`vaultuserpb`) and vault data services (`vaultpb`).
 
+5. ```.env``` - should contain basic environment variables. Mandatory ones: "VAULT_MASTER_KEY" for encryption purposes, "DATABASE_URL" for db connection in postgresql e.g ```postgres://admin:password@host:port/vault-db```, "GRPC_PORT" for server
+
 ---
 
 ## Features
