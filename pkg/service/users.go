@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/AleksZelenchuk/vault-server/gen/go/vaultuserpb"
 	"github.com/AleksZelenchuk/vault-server/pkg/auth"
 	"golang.org/x/crypto/bcrypt"
@@ -66,10 +65,8 @@ func (s *UserVaultService) Login(ctx context.Context, req *vaultuserpb.LoginRequ
 
 	// Compare hashed password
 	if err := bcrypt.CompareHashAndPassword(user.Password, []byte(req.Password)); err != nil {
-		fmt.Println(err)
 		return nil, status.Errorf(codes.Unauthenticated, "invalid credentials")
 	}
-	fmt.Println(err)
 	token, err := auth.GenerateToken(user.ID)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to generate token: %v", err)

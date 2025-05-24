@@ -4,14 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/AleksZelenchuk/vault-server/gen/go/vaultpb"
 	"github.com/AleksZelenchuk/vault-server/pkg/auth"
-	_ "log"
-	"strconv"
-
 	"github.com/AleksZelenchuk/vault-server/pkg/storage"
 	"github.com/google/uuid"
+	_ "log"
+	"reflect"
 )
 
 type VaultService struct {
@@ -25,14 +23,19 @@ func NewVaultService(store *storage.Store) *VaultService {
 }
 
 func (s *VaultService) CreateEntry(ctx context.Context, req *vaultpb.CreateEntryRequest) (*vaultpb.CreateEntryResponse, error) {
-	_, errValidate := auth.UserIDFromContext(ctx)
+	userId, errValidate := auth.UserIDFromContext(ctx)
 	if errValidate != true {
 		return nil, errors.New("no user id provided")
 	}
 
+	if !validateEntry(req) {
+		return nil, errors.New("invalid entry data")
+	}
+
+	newUuid := uuid.New()
 	entry := &storage.Entry{
-		ID:       uuid.New(),
-		UserId:   req.Entry.UserId,
+		ID:       newUuid,
+		UserId:   userId,
 		Title:    req.Entry.Title,
 		Username: req.Entry.Username,
 		Password: []byte(req.Entry.Password),
@@ -41,16 +44,37 @@ func (s *VaultService) CreateEntry(ctx context.Context, req *vaultpb.CreateEntry
 		Folder:   sqlNull(req.Entry.Folder),
 	}
 	result, err := s.store.Create(ctx, entry)
-	fmt.Println(result)
 	if err != nil {
 		return nil, err
 	}
-	lastInsertedId, err := result.RowsAffected()
+	_, err = result.RowsAffected()
 	if err != nil {
 		return nil, err
 	}
 
-	return &vaultpb.CreateEntryResponse{Id: strconv.FormatInt(lastInsertedId, 10)}, nil
+	return &vaultpb.CreateEntryResponse{Id: newUuid.String()}, nil
+}
+
+func validateEntry(req *vaultpb.CreateEntryRequest) bool {
+	entry := req.Entry
+	if entry == nil {
+		return false
+	}
+	v := reflect.ValueOf(entry).Elem()
+	for _, field := range []string{"Title", "Username", "Password"} {
+		val := v.FieldByName(field)
+		if !val.IsValid() || val.Kind() != reflect.String || val.String() == "" {
+			return false
+		}
+	}
+
+	// ToDo for future check this field
+	/*tags := v.FieldByName("Tags")
+	if !tags.IsValid() || tags.Kind() != reflect.Slice || tags.Len() == 0 {
+		return false
+	}*/
+
+	return true
 }
 
 func (s *VaultService) GetEntry(ctx context.Context, req *vaultpb.GetEntryRequest) (*vaultpb.GetEntryResponse, error) {

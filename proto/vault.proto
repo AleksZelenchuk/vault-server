@@ -4,16 +4,14 @@ package vault;
 
 option go_package = "github.com/AleksZelenchuk/vault-server/gen/go/vaultpb";
 
-// Example message and service
 message VaultEntry {
   string id = 1;
-  string user_id = 2;
-  string title = 3;
-  string username = 4;
-  string password = 5;
-  string notes = 6;
-  repeated string tags = 7;
-  string folder = 8;
+  string title = 2;
+  string username = 3;
+  string password = 4;
+  string notes = 5;
+  repeated string tags = 6;
+  string folder = 7;
 }
 
 message CreateEntryRequest {
