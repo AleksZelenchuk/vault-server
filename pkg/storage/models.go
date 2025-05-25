@@ -16,6 +16,7 @@ type Entry struct {
 	Notes     sql.NullString `db:"notes"`
 	Tags      pq.StringArray `db:"tags"`
 	Folder    sql.NullString `db:"folder"`
+	Domain    sql.NullString `db:"domain"`
 	CreatedAt time.Time      `db:"created_at"`
 	UpdatedAt time.Time      `db:"updated_at"`
 }

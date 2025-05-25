@@ -30,7 +30,7 @@ func (s *Store) Create(ctx context.Context, e *Entry) (sql.Result, error) {
 		return nil, err
 	}
 	e.Password = enc
-	query := "INSERT INTO vault_entries (id, title, username, password, notes, tags, folder, user_id) VALUES (:id, :title, :username, :password, :notes, :tags, :folder, :user_id)"
+	query := "INSERT INTO vault_entries (id, title, username, password, notes, tags, folder, user_id, domain) VALUES (:id, :title, :username, :password, :notes, :tags, :folder, :user_id, :domain)"
 
 	return s.db.NamedExecContext(ctx, query, e)
 }
@@ -76,7 +76,7 @@ func (s *Store) Delete(ctx context.Context, id uuid.UUID) (bool, error) {
 	return true, nil
 }
 
-func (s *Store) List(ctx context.Context, folder string, tags []string) ([]Entry, error) {
+func (s *Store) List(ctx context.Context, domain string, folder string, tags []string) ([]Entry, error) {
 	query := `SELECT * FROM vault_entries WHERE 1=1`
 
 	userId, _ := auth.UserIDFromContext(ctx)
@@ -88,16 +88,23 @@ func (s *Store) List(ctx context.Context, folder string, tags []string) ([]Entry
 	query += ` AND user_id=$1`
 	args = append(args, userId)
 
+	if len(domain) > 0 {
+		query += ` AND "domain" LIKE $2`
+		args = append(args, "%"+domain+"%")
+	}
+
 	if folder != "" {
-		query += ` AND folder=$1`
+		query += ` AND folder=$3`
 		args = append(args, folder)
 	}
 	if len(tags) > 0 {
-		query += ` AND tags @> $2`
+		query += ` AND tags @> $4`
 		args = append(args, pq.Array(tags))
 	}
+
 	var entries []Entry
 	err := s.db.SelectContext(ctx, &entries, query, args...)
+
 	for _, entry := range entries {
 		entry.Password, _ = Decrypt(entry.Password)
 	}

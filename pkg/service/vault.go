@@ -42,6 +42,7 @@ func (s *VaultService) CreateEntry(ctx context.Context, req *vaultpb.CreateEntry
 		Notes:    sqlNull(req.Entry.Notes),
 		Tags:     req.Entry.Tags,
 		Folder:   sqlNull(req.Entry.Folder),
+		Domain:   sqlNull(req.Entry.Domain),
 	}
 	result, err := s.store.Create(ctx, entry)
 	if err != nil {
@@ -124,7 +125,7 @@ func (s *VaultService) ListEntries(ctx context.Context, req *vaultpb.ListEntries
 		return nil, errors.New("no user id provided")
 	}
 
-	resp, err := s.store.List(ctx, req.Folder, req.Tags)
+	resp, err := s.store.List(ctx, req.Domain, req.Folder, req.Tags)
 	if err != nil {
 		return nil, err
 	}
@@ -133,6 +134,7 @@ func (s *VaultService) ListEntries(ctx context.Context, req *vaultpb.ListEntries
 		entry.Password, _ = storage.Decrypt(entry.Password)
 		vaultEntries = append(vaultEntries, toProto(&entry))
 	}
+
 	return &vaultpb.ListEntriesResponse{Entries: vaultEntries}, nil
 }
 
@@ -146,6 +148,7 @@ func toProto(e *storage.Entry) *vaultpb.VaultEntry {
 		Notes:    e.Notes.String,
 		Tags:     e.Tags,
 		Folder:   e.Folder.String,
+		Domain:   e.Domain.String,
 	}
 }
 

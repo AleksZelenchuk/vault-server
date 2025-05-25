@@ -12,6 +12,7 @@ message VaultEntry {
   string notes = 5;
   repeated string tags = 6;
   string folder = 7;
+  string domain = 8;
 }
 
 message CreateEntryRequest {
@@ -33,6 +34,7 @@ message GetEntryResponse {
 message ListEntriesRequest {
   string folder = 1;
   repeated string tags = 2;
+  string domain = 3;
 }
 
 message ListEntriesResponse {

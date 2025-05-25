@@ -7,6 +7,7 @@
 package vaultpb
 
 import (
+	"fmt"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -30,6 +31,7 @@ type VaultEntry struct {
 	Notes         string                 `protobuf:"bytes,5,opt,name=notes,proto3" json:"notes,omitempty"`
 	Tags          []string               `protobuf:"bytes,6,rep,name=tags,proto3" json:"tags,omitempty"`
 	Folder        string                 `protobuf:"bytes,7,opt,name=folder,proto3" json:"folder,omitempty"`
+	Domain        string                 `protobuf:"bytes,8,opt,name=domain,proto3" json:"domain,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -109,6 +111,14 @@ func (x *VaultEntry) GetTags() []string {
 func (x *VaultEntry) GetFolder() string {
 	if x != nil {
 		return x.Folder
+	}
+	return ""
+}
+
+func (x *VaultEntry) GetDomain() string {
+	fmt.Println(x.Domain)
+	if x != nil {
+		return x.Domain
 	}
 	return ""
 }
@@ -293,6 +303,7 @@ type ListEntriesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Folder        string                 `protobuf:"bytes,1,opt,name=folder,proto3" json:"folder,omitempty"`
 	Tags          []string               `protobuf:"bytes,2,rep,name=tags,proto3" json:"tags,omitempty"`
+	Domain        string                 `protobuf:"bytes,3,opt,name=domain,proto3" json:"domain,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -339,6 +350,13 @@ func (x *ListEntriesRequest) GetTags() []string {
 		return x.Tags
 	}
 	return nil
+}
+
+func (x *ListEntriesRequest) GetDomain() string {
+	if x != nil {
+		return x.Domain
+	}
+	return ""
 }
 
 type ListEntriesResponse struct {
@@ -477,7 +495,7 @@ var File_vault_proto protoreflect.FileDescriptor
 
 const file_vault_proto_rawDesc = "" +
 	"\n" +
-	"\vvault.proto\x12\x05vault\"\xac\x01\n" +
+	"\vvault.proto\x12\x05vault\"\xc4\x01\n" +
 	"\n" +
 	"VaultEntry\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
@@ -486,7 +504,8 @@ const file_vault_proto_rawDesc = "" +
 	"\bpassword\x18\x04 \x01(\tR\bpassword\x12\x14\n" +
 	"\x05notes\x18\x05 \x01(\tR\x05notes\x12\x12\n" +
 	"\x04tags\x18\x06 \x03(\tR\x04tags\x12\x16\n" +
-	"\x06folder\x18\a \x01(\tR\x06folder\"=\n" +
+	"\x06folder\x18\a \x01(\tR\x06folder\x12\x16\n" +
+	"\x06domain\x18\b \x01(\tR\x06domain\"=\n" +
 	"\x12CreateEntryRequest\x12'\n" +
 	"\x05entry\x18\x01 \x01(\v2\x11.vault.VaultEntryR\x05entry\"%\n" +
 	"\x13CreateEntryResponse\x12\x0e\n" +
@@ -494,10 +513,11 @@ const file_vault_proto_rawDesc = "" +
 	"\x0fGetEntryRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\";\n" +
 	"\x10GetEntryResponse\x12'\n" +
-	"\x05entry\x18\x01 \x01(\v2\x11.vault.VaultEntryR\x05entry\"@\n" +
+	"\x05entry\x18\x01 \x01(\v2\x11.vault.VaultEntryR\x05entry\"X\n" +
 	"\x12ListEntriesRequest\x12\x16\n" +
 	"\x06folder\x18\x01 \x01(\tR\x06folder\x12\x12\n" +
-	"\x04tags\x18\x02 \x03(\tR\x04tags\"B\n" +
+	"\x04tags\x18\x02 \x03(\tR\x04tags\x12\x16\n" +
+	"\x06domain\x18\x03 \x01(\tR\x06domain\"B\n" +
 	"\x13ListEntriesResponse\x12+\n" +
 	"\aentries\x18\x01 \x03(\v2\x11.vault.VaultEntryR\aentries\"$\n" +
 	"\x12DeleteEntryRequest\x12\x0e\n" +
