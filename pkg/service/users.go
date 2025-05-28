@@ -26,6 +26,8 @@ func NewUserVaultService(store *storage.UserStore) *UserVaultService {
 	return &UserVaultService{store: store}
 }
 
+// Register will create new user from given data
+// todo: add password confirmation field to validate before save
 func (s *UserVaultService) Register(ctx context.Context, req *vaultuserpb.CreateUserRequest) (*vaultuserpb.CreateUserResponse, error) {
 	if req == nil || req.User == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid request: user data is required")
@@ -54,6 +56,7 @@ func (s *UserVaultService) Register(ctx context.Context, req *vaultuserpb.Create
 	return &vaultuserpb.CreateUserResponse{Id: strconv.FormatInt(lastInsertedId, 10)}, nil
 }
 
+// Login - perform user login with a given username and password, return either error or generated JWT token
 func (s *UserVaultService) Login(ctx context.Context, req *vaultuserpb.LoginRequest) (*vaultuserpb.LoginResponse, error) {
 	user, err := s.store.GetByUsername(ctx, req.Username)
 	if err != nil {
@@ -75,6 +78,8 @@ func (s *UserVaultService) Login(ctx context.Context, req *vaultuserpb.LoginRequ
 	return &vaultuserpb.LoginResponse{Token: token}, nil
 }
 
+// Deprecated: GetUserByUsername not sure if this is needed
+// probably will rework it to retrieve user by its active id to avoid security issues
 func (s *UserVaultService) GetUserByUsername(ctx context.Context, req *vaultuserpb.GetUserRequest) (*vaultuserpb.GetUserResponse, error) {
 	_, err := auth.UserIDFromContext(ctx)
 	if err != true {
@@ -90,10 +95,10 @@ func (s *UserVaultService) GetUserByUsername(ctx context.Context, req *vaultuser
 }
 
 func (s *UserVaultService) DeleteUser(ctx context.Context, req *vaultuserpb.DeleteUserRequest) (*vaultuserpb.DeleteUserResponse, error) {
-	/*_, err := auth.UserIDFromContext(ctx)
+	_, err := auth.UserIDFromContext(ctx)
 	if err != true {
 		return nil, errors.New("no user id provided")
-	}*/
+	}
 
 	id, err2 := uuid.Parse(req.Id)
 	if err2 != nil {
@@ -108,6 +113,7 @@ func (s *UserVaultService) DeleteUser(ctx context.Context, req *vaultuserpb.Dele
 	return &vaultuserpb.DeleteUserResponse{Success: success}, nil
 }
 
+// convert user data to proto format
 func userToProto(e *storage.User) *vaultuserpb.VaultUser {
 	return &vaultuserpb.VaultUser{
 		Id:       e.ID.String(),

@@ -11,6 +11,7 @@ type Config struct {
 	VaultMasterKey string
 }
 
+// LoadConfig from os to local struct for farther usage
 func LoadConfig() *Config {
 	Init()
 	cfg := &Config{
@@ -25,6 +26,7 @@ func LoadConfig() *Config {
 	return cfg
 }
 
+// Init will load data from .env file to os
 func Init() {
 	err := godotenv.Load()
 	if err != nil {

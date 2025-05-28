@@ -24,6 +24,7 @@ func (s *UserStore) CreateUser(ctx context.Context, e *User) (sql.Result, error)
 	return s.db.NamedExecContext(ctx, query, e)
 }
 
+// Deprecated: GetByUsername: should be reworked to use user id instead
 func (s *UserStore) GetByUsername(ctx context.Context, username string) (*User, error) {
 	var e User
 	err := s.db.GetContext(ctx, &e, `SELECT * FROM vault_users WHERE username=$1`, username)

@@ -111,6 +111,8 @@ func (s *Store) List(ctx context.Context, domain string, folder string, tags []s
 	return entries, err
 }
 
+// validateUserPermission we need to check if given used have permission to perform action with the requested entry
+// before proceeding
 func (s *Store) validateUserPermission(ctx context.Context, id uuid.UUID) error {
 	userId, _ := auth.UserIDFromContext(ctx)
 	if userId == "" {

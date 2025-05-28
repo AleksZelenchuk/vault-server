@@ -22,6 +22,8 @@ func NewVaultService(store *storage.Store) *VaultService {
 	return &VaultService{store: store}
 }
 
+// CreateEntry create entry from given data
+// user_id value is taken from an active user and cannot be passed to avoid data consistency problems
 func (s *VaultService) CreateEntry(ctx context.Context, req *vaultpb.CreateEntryRequest) (*vaultpb.CreateEntryResponse, error) {
 	userId, errValidate := auth.UserIDFromContext(ctx)
 	if errValidate != true {
@@ -56,6 +58,7 @@ func (s *VaultService) CreateEntry(ctx context.Context, req *vaultpb.CreateEntry
 	return &vaultpb.CreateEntryResponse{Id: newUuid.String()}, nil
 }
 
+// validateEntry need to validate entry data to make sure required fields are there to avoid panic
 func validateEntry(req *vaultpb.CreateEntryRequest) bool {
 	entry := req.Entry
 	if entry == nil {
@@ -119,6 +122,7 @@ func (s *VaultService) DeleteEntry(ctx context.Context, req *vaultpb.DeleteEntry
 	return &vaultpb.DeleteEntryResponse{Success: success}, nil
 }
 
+// ListEntries here we retrieve list of all entries eligible for active user
 func (s *VaultService) ListEntries(ctx context.Context, req *vaultpb.ListEntriesRequest) (*vaultpb.ListEntriesResponse, error) {
 	_, errValidate := auth.UserIDFromContext(ctx)
 	if errValidate != true {

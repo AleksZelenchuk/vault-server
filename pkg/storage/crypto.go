@@ -25,6 +25,7 @@ func InitCrypto() error {
 	return nil
 }
 
+// Encrypt slice of bytes into hashed format using cipher
 func Encrypt(plain []byte) ([]byte, error) {
 	if masterKey == nil {
 		err := InitCrypto()
@@ -47,6 +48,7 @@ func Encrypt(plain []byte) ([]byte, error) {
 	return aesgcm.Seal(nonce, nonce, plain, nil), nil
 }
 
+// Decrypt data from cyphered format to bytes
 func Decrypt(ciphertext []byte) ([]byte, error) {
 	if masterKey == nil {
 		err := InitCrypto()
